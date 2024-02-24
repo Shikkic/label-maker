@@ -1,4 +1,4 @@
-package com.labelmaker;
+package net.runelite.client.plugins.labelmaker;
 
 import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
@@ -8,9 +8,9 @@ import net.runelite.client.config.ConfigItem;
 public interface LabelMakerConfig extends Config
 {
 	@ConfigItem(
-		keyName = "greeting",
-		name = "Welcome Greeting",
-		description = "The message to show to the user when they login"
+			keyName = "greeting",
+			name = "Welcome Greeting",
+			description = "The message to show to the user when they login"
 	)
 	default String greeting()
 	{
