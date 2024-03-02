@@ -175,8 +175,11 @@ public class LabelMakerPlugin extends Plugin
                     continue;
                 }
 
+                // These coordinates are for the in-game world I think and not reflective
+                // of the coordinates in relation to player perspective / screenshot.
                 annotations.add(new YOLOAnnotation(categoryID, x, y, width, height));
 
+                // Rendering AABB for debugging purposes.
                 OverlayUtil.renderPolygon(graphics, aabb, Color.RED);
             }
 
