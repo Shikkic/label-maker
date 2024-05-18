@@ -24,6 +24,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 
 import java.util.ArrayList;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ScheduledExecutorService;
 import net.runelite.client.ui.DrawManager;
 import java.util.UUID;
@@ -36,10 +37,11 @@ import java.util.function.Consumer;
 
 import net.runelite.client.ui.overlay.OverlayUtil;
 import net.runelite.client.util.ImageUtil;
+import net.runelite.client.util.Text;
 
 @Slf4j
 @PluginDescriptor(
-        name = "Example"
+        name = "Labelmaker"
 )
 public class LabelMakerPlugin extends Plugin
 {
@@ -63,6 +65,8 @@ public class LabelMakerPlugin extends Plugin
 
     private ObjectIDOverlay objectIDOverlay;
 
+    private List<String> npcsToLabel = new CopyOnWriteArrayList<>();
+
     @Override
     protected void startUp() throws Exception
     {
@@ -84,7 +88,9 @@ public class LabelMakerPlugin extends Plugin
     {
         if (gameStateChanged.getGameState() == GameState.LOGGED_IN)
         {
-            client.addChatMessage(ChatMessageType.GAMEMESSAGE, "", "Example says " + config.greeting(), null);
+            int screenshotWidth = client.getRealDimensions().width;
+            int screenshotHeight = client.getRealDimensions().height;
+            client.addChatMessage(ChatMessageType.GAMEMESSAGE, "", "Example says " + screenshotHeight + " " + screenshotWidth, null);
         }
     }
 
@@ -117,7 +123,7 @@ public class LabelMakerPlugin extends Plugin
         }
 
         public void writeAnnotationsToFile(String imageName, List<YOLOAnnotation> annotations) {
-            String filename = "C:\\Users\\shikkic\\Desktop\\osrsdata\\" + imageName + ".txt"; // Assuming image name is like 'image1.jpg'
+            String filename = "C:\\Users\\shikkic\\Desktop\\dataset\\labels\\" + imageName + ".txt"; // Assuming image name is like 'image1.jpg'
 
             try (FileWriter writer = new FileWriter(filename)) {
                 for (YOLOAnnotation annotation : annotations) {
@@ -140,6 +146,11 @@ public class LabelMakerPlugin extends Plugin
 
         @Override
         public Dimension render(Graphics2D graphics) {
+            npcsToLabel = Text.fromCSV(config.npcs());
+            int screenshotWidth = client.getRealDimensions().width;
+            int screenshotHeight = client.getRealDimensions().height;
+
+
             Player player = client.getLocalPlayer();
             if (player == null) {
                 return null;
@@ -162,13 +173,15 @@ public class LabelMakerPlugin extends Plugin
                 Rectangle2D aabb = convexHull.getBounds2D();
 
                 // Get bounding box coordinates
-                int x = (int) aabb.getMinX();
-                int y = (int) aabb.getMinY();
                 int width = (int) aabb.getWidth();
                 int height = (int) aabb.getHeight();
 
+                int x = (int) aabb.getMinX() + (width / 2);
+                int y = (int) aabb.getMinY() + (height / 2);
+
                 int categoryID = npc.getId();
-                if (categoryID != 2791) {
+                String categoryIDstr = String.valueOf(categoryID);
+                if (!npcsToLabel.contains(categoryIDstr)) {
                     continue;
                 }
                 if (x < 0 || y < 0) {
@@ -177,13 +190,18 @@ public class LabelMakerPlugin extends Plugin
 
                 // These coordinates are for the in-game world I think and not reflective
                 // of the coordinates in relation to player perspective / screenshot.
-                annotations.add(new YOLOAnnotation(categoryID, x, y, width, height));
+                int npcIndex = npcsToLabel.indexOf(categoryIDstr);
+                annotations.add(new YOLOAnnotation(npcIndex, x, y, width, height, screenshotWidth, screenshotHeight));
 
                 // Rendering AABB for debugging purposes.
-                OverlayUtil.renderPolygon(graphics, aabb, Color.RED);
+                if (config.debugBBEnabled()) {
+                    OverlayUtil.renderPolygon(graphics, aabb, Color.RED);
+                }
             }
 
-            takeScreenshot(annotations);
+            if (config.screenshot()) {
+                takeScreenshot(annotations);
+            }
 
             return null;
         }
