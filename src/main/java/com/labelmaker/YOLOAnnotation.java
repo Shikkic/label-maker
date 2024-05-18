@@ -8,12 +8,12 @@ public class YOLOAnnotation {
     private double height;
 
     // Constructor
-    public YOLOAnnotation(int classId, double x, double y, double width, double height) {
+    public YOLOAnnotation(int classId, double x, double y, double width, double height, int window_width, int window_height) {
         this.classId = classId;
-        this.x = x;
-        this.y = y;
-        this.width = width;
-        this.height = height;
+        this.x = x / window_width;
+        this.y = y / window_height;
+        this.width = width / window_width;
+        this.height = height / window_height;
     }
 
 
